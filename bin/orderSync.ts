@@ -1,3 +1,6 @@
+import { writeFile } from "node:fs/promises";
+import { resolve } from "node:path";
+
 import { getCurrentPrintOrders } from "../lib/adOrbit";
 import { loadConfig } from "../lib/config.js";
 import { batchUpdateCompanies, getCompanies } from "../lib/hubSpot.js";
@@ -56,6 +59,14 @@ async function main() {
 
     await batchUpdateCompanies(config.hubSpotAccessToken, plan.updates);
     console.log(`Updated ${plan.updates.length} HubSpot companies.`);
+
+    const completedAt = new Date().toISOString();
+    const logPath = resolve(process.env.ORDER_SYNC_LOG_PATH || "./order-sync.log");
+    await writeFile(
+        logPath,
+        `Last successful run: ${completedAt}\nCompanies updated: ${plan.updates.length}\n`,
+        "utf8"
+    );
 }
 
 main().catch(error => {
