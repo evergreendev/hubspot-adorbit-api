@@ -1,0 +1,10 @@
+[
+  {
+    "name": "Black Hills Family",
+    "publicationId": "27",
+    "targetIssueId": "619",
+    "hubspotStatusProperty": "family_renewal_status",
+    "purchasedValue": "Purchased",
+    "notPurchasedValue": "Not Purchased"
+  }
+]

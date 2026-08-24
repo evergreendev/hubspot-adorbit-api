@@ -1,48 +1,87 @@
-import axios from 'axios';
-import CryptoJS from 'crypto-js';
+import { createHmac } from "node:crypto";
+import type { AdOrbitOrder } from "./types.js";
 
-async function fetchFromAdOrbit(url: string, method: string, headers?: {}) {
-    const API_KEY = process.env.API_KEY;
-    const API_PUB = process.env.PUBLIC_KEY;
+export function createAdOrbitAuthorization(
+    method: string,
+    url: string,
+    publicKey: string,
+    privateKey: string
+): string {
+    const message = `${method.toUpperCase()}\n${url}`;
+    const signature = createHmac("sha512", privateKey)
+        .update(message)
+        .digest("hex");
+    const encodedSignature = Buffer.from(signature).toString("base64");
+    return `ADORBIT ${publicKey}:${encodedSignature}`;
+}
 
-
-
-    // Check if API key is provided
-    if (!API_KEY) {
-        console.error('Error: API_KEY is required. Please set it in your .env file.');
-        process.exit(1);
-    }
-
-
-    const msg = method.toUpperCase() + "\n" + url;
-
-    const hash = CryptoJS.HmacSHA512(msg, API_KEY);
-    const crypt = CryptoJS.enc.Utf8.parse(hash.toString());
-    const base64 = CryptoJS.enc.Base64.stringify(crypt);
-
-    const res = await axios.get(url, {
+async function adOrbitGet<T>(options: {
+    url: string;
+    publicKey: string;
+    privateKey: string;
+}): Promise<T> {
+    const method = "GET";
+    const response = await fetch(options.url, {
         headers: {
-            Authorization: "ADORBIT " + API_PUB + ":" + base64,
-            Accept: 'application/json',
+            Accept: "application/json",
             Method: method,
-            ...headers
+            Authorization: createAdOrbitAuthorization(
+                method,
+                options.url,
+                options.publicKey,
+                options.privateKey
+            )
         }
     });
 
-    return res.data;
+    if (!response.ok) {
+        throw new Error(`Ad Orbit request failed: ${response.status} ${await response.text()}`);
+    }
+    return response.json() as Promise<T>;
 }
 
-export async function getAdOrbitOrders() {
-    const API_BASE_URL = process.env.API_BASE_URL || 'https://api.adorbit.com';
-    const API_KEY = process.env.API_KEY;
-
-// Check if API key is provided
-    if (!API_KEY) {
-        console.error('Error: API_KEY is required. Please set it in your .env file.');
-        process.exit(1);
+function extractOrders(payload: unknown): AdOrbitOrder[] {
+    if (Array.isArray(payload)) return payload as AdOrbitOrder[];
+    if (payload && typeof payload === "object") {
+        const object = payload as Record<string, unknown>;
+        for (const key of ["orders", "results", "data"]) {
+            if (Array.isArray(object[key])) return object[key] as AdOrbitOrder[];
+        }
     }
+    throw new Error("Ad Orbit returned an unexpected orders response shape");
+}
 
-    const routes = await fetchFromAdOrbit(API_BASE_URL+"/", 'GET');
+export async function getCurrentPrintOrders(options: {
+    baseUrl: string;
+    publicKey: string;
+    privateKey: string;
+}): Promise<AdOrbitOrder[]> {
+    const routes = await adOrbitGet<Record<string, unknown>>({
+        url: `${options.baseUrl}/`,
+        publicKey: options.publicKey,
+        privateKey: options.privateKey
+    });
+    if (typeof routes.orders !== "string") {
+        throw new Error("Ad Orbit route discovery did not return an orders URL");
+    }
+    const separator = routes.orders.includes("?") ? "&" : "?";
+    const payload = await adOrbitGet<unknown>({
+        url: `${routes.orders}${separator}currentprint=1`,
+        publicKey: options.publicKey,
+        privateKey: options.privateKey
+    });
+    return extractOrders(payload);
+}
 
-    return await fetchFromAdOrbit(routes.orders + "?currentPrint=1", 'GET');
+export async function getCompany(options: {
+    baseUrl: string;
+    publicKey: string;
+    privateKey: string;
+    companyId: string;
+}): Promise<unknown> {
+    return adOrbitGet<unknown>({
+        url: `${options.baseUrl}/companies/${encodeURIComponent(options.companyId)}`,
+        publicKey: options.publicKey,
+        privateKey: options.privateKey
+    });
 }

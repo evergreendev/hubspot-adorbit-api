@@ -4,7 +4,10 @@
   "private": true,
   "scripts": {
     "build": "tsc",
-    "dev": "tsx watch ./bin/www.ts",
+    "dev": "tsx watch --env-file=.env ./bin/www.ts",
+    "dry-run": "tsx --env-file=.env ./bin/orderSync.ts --dry-run",
+    "sync": "tsx --env-file=.env ./bin/orderSync.ts --dry-run",
+    "start-sync": "node --env-file=.env ./dist/bin/orderSync.js",
     "start": "node ./dist/bin/www.js",
     "typecheck": "tsc --noEmit"
   },
