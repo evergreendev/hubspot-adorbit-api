@@ -19,6 +19,7 @@ async function adOrbitGet<T>(options: {
     url: string;
     publicKey: string;
     privateKey: string;
+    headers?: Record<string, string>;
 }): Promise<T> {
     const method = "GET";
     const response = await fetch(options.url, {
@@ -30,7 +31,8 @@ async function adOrbitGet<T>(options: {
                 options.url,
                 options.publicKey,
                 options.privateKey
-            )
+            ),
+            ...options.headers
         }
     });
 
@@ -65,12 +67,25 @@ export async function getCurrentPrintOrders(options: {
         throw new Error("Ad Orbit route discovery did not return an orders URL");
     }
     const separator = routes.orders.includes("?") ? "&" : "?";
-    const payload = await adOrbitGet<unknown>({
-        url: `${routes.orders}${separator}currentprint=1`,
-        publicKey: options.publicKey,
-        privateKey: options.privateKey
-    });
-    return extractOrders(payload);
+    const url = `${routes.orders}${separator}currentprint=1`;
+    const limit = 100;
+    const orders: AdOrbitOrder[] = [];
+
+    for (let offset = 0; ; offset += 1) {
+        const payload = await adOrbitGet<unknown>({
+            url,
+            publicKey: options.publicKey,
+            privateKey: options.privateKey,
+            headers: {
+                "X-OPT-LIMIT": String(limit),
+                "X-OPT-OFFSET": String(offset)
+            }
+        });
+        const page = extractOrders(payload);
+        orders.push(...page);
+
+        if (page.length < limit) return orders;
+    }
 }
 
 export async function getCompany(options: {

@@ -14,7 +14,7 @@ router.get('/', async (_request, response, next) => {
       privateKey: config.adOrbitPrivateKey,
     });
 
-    response.json();
+    response.json({count: orders.length,orders});
   } catch (error) {
     next(error);
   }
