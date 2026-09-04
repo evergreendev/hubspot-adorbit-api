@@ -6,5 +6,13 @@
     "hubspotStatusProperty": "family_renewal_status",
     "purchasedValue": "Purchased",
     "notPurchasedValue": "Not Purchased"
+  },
+  {
+    "name": "Southern Hills Vacation Guide",
+    "publicationId": "5",
+    "targetIssueId": "627",
+    "hubspotStatusProperty": "shvg_renewal_status",
+    "purchasedValue": "Purchased",
+    "notPurchasedValue": "Not Purchased"
   }
 ]
