@@ -67,9 +67,11 @@ export async function getCurrentPrintOrders(options: {
         throw new Error("Ad Orbit route discovery did not return an orders URL");
     }
     const separator = routes.orders.includes("?") ? "&" : "?";
-    const url = `${routes.orders}${separator}currentprint=1`;
+    const url = `${routes.orders}`;
     const limit = 100;
     const orders: AdOrbitOrder[] = [];
+    const changedSince = new Date();
+    changedSince.setUTCMonth(changedSince.getUTCMonth() - 3);
 
     for (let offset = 0; ; offset += 1) {
         const payload = await adOrbitGet<unknown>({
@@ -77,6 +79,7 @@ export async function getCurrentPrintOrders(options: {
             publicKey: options.publicKey,
             privateKey: options.privateKey,
             headers: {
+                "X-OPT-CHANGEDSINCE": changedSince.toISOString(),
                 "X-OPT-LIMIT": String(limit),
                 "X-OPT-OFFSET": String(offset)
             }
