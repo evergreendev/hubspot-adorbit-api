@@ -14,5 +14,13 @@
     "hubspotStatusProperty": "shvg_renewal_status",
     "purchasedValue": "Purchased",
     "notPurchasedValue": "Not Purchased"
+  },
+  {
+    "name": "FACES of the Black Hills",
+    "publicationId": "24",
+    "targetIssueId": "623",
+    "hubspotStatusProperty": "faces_renewal_status",
+    "purchasedValue": "Purchased",
+    "notPurchasedValue": "Not Purchased"
   }
 ]
