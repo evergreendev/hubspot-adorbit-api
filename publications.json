@@ -22,5 +22,13 @@
     "hubspotStatusProperty": "faces_renewal_status",
     "purchasedValue": "Purchased",
     "notPurchasedValue": "Not Purchased"
-  }
+  },
+  {
+    "name": "Black Hills Bride",
+    "publicationId": "4",
+    "targetIssueId": "624",
+    "hubspotStatusProperty": "bride_current_issue_status",
+    "purchasedValue": "Purchased",
+    "notPurchasedValue": "Not Purchased"
+}
 ]
