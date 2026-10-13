@@ -4,6 +4,7 @@ import logger from 'morgan';
 import path from 'node:path';
 
 import companyRouter from './routes/company';
+import hubSpotCompaniesRouter from './routes/hubSpotCompanies';
 import indexRouter from './routes/index';
 import ordersRouter from './routes/orders';
 import usersRouter from './routes/users';
@@ -18,6 +19,8 @@ app.use(express.static(path.resolve(process.cwd(), 'public')));
 
 app.use('/', indexRouter);
 app.use('/company', companyRouter);
+app.use('/companies', companyRouter);
+app.use('/hubspot/companies', hubSpotCompaniesRouter);
 app.use('/orders', ordersRouter);
 app.use('/users', usersRouter);
 

@@ -2,6 +2,40 @@ import type { HubSpotCompany } from "./types.js";
 
 const HUBSPOT_BASE_URL = "https://api.hubapi.com";
 
+export interface HubSpotCompanyProperty {
+    name: string;
+    type: string;
+    options: Array<{ label: string; value: string }>;
+    modificationMetadata?: { readOnlyValue?: boolean };
+}
+
+export async function getCompanyPropertyDefinitions(accessToken: string): Promise<HubSpotCompanyProperty[]> {
+    const response = await hubSpotRequest<{ results: HubSpotCompanyProperty[] }>(
+        accessToken, "/crm/v3/properties/companies"
+    );
+    return response.results;
+}
+
+export async function updateHubSpotCompany(
+    accessToken: string,
+    id: string,
+    properties: Record<string, string>
+): Promise<HubSpotCompany> {
+    const path = `/crm/v3/objects/companies/${encodeURIComponent(id)}`;
+    await hubSpotRequest(accessToken, path, {
+        method: "PATCH",
+        body: JSON.stringify({ properties })
+    });
+    const params = new URLSearchParams({ properties: Object.keys(properties).join(",") });
+    const company = await hubSpotRequest<HubSpotCompany>(accessToken, `${path}?${params}`);
+    for (const [key, value] of Object.entries(properties)) {
+        if (company.properties[key] !== value) {
+            throw new Error(`HubSpot did not confirm ${key}=${value} for company ${id}`);
+        }
+    }
+    return company;
+}
+
 async function hubSpotRequest<T>(
     accessToken: string,
     path: string,

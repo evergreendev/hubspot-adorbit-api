@@ -103,3 +103,61 @@ export async function getCompany(options: {
         privateKey: options.privateKey
     });
 }
+
+export async function updateCompany(options: {
+    baseUrl: string;
+    publicKey: string;
+    privateKey: string;
+    companyId: string;
+    properties: Record<string, unknown>;
+}): Promise<unknown> {
+    const url = `${options.baseUrl}/companies/${encodeURIComponent(options.companyId)}`;
+    const method = "PUT";
+    const fields = new URLSearchParams();
+    for (const [key, value] of Object.entries(options.properties)) {
+        fields.set(key, typeof value === "boolean" ? (value ? "1" : "0") : String(value));
+    }
+    const response = await fetch(url, {
+        method,
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/x-www-form-urlencoded",
+            Method: method,
+            Authorization: createAdOrbitAuthorization(method, url, options.publicKey, options.privateKey)
+        },
+        body: fields.toString()
+    });
+    if (!response.ok) {
+        throw new Error(`Ad Orbit request failed: ${response.status} ${await response.text()}`);
+    }
+    // A successful HTTP response alone does not confirm that Ad Orbit applied the fields.
+    await response.text();
+    const company = await getCompany(options);
+    if (!company || typeof company !== "object" || Array.isArray(company)) {
+        throw new CompanyUpdateVerificationError("Ad Orbit returned an unexpected company response after updating");
+    }
+    const record = company as Record<string, unknown>;
+    for (const [key, expected] of Object.entries(options.properties)) {
+        if (key === "dead") {
+            const active = record.active;
+            const actualDead = Object.prototype.hasOwnProperty.call(record, "dead")
+                ? record.dead
+                : active === true || active === 1 || active === "1" ? 0
+                : active === false || active === 0 || active === "0" ? 1 : undefined;
+            if (actualDead === undefined || String(Number(actualDead)) !== String(Number(expected))) {
+                throw new CompanyUpdateVerificationError(`Ad Orbit did not confirm dead=${Number(expected)} for company ${options.companyId} (active=${String(active)})`);
+            }
+        } else if (Object.prototype.hasOwnProperty.call(record, key)) {
+            const actual = record[key];
+            const matches = typeof expected === "boolean"
+                ? Number(actual) === Number(expected)
+                : String(actual) === String(expected);
+            if (!matches) {
+                throw new CompanyUpdateVerificationError(`Ad Orbit did not apply ${key} for company ${options.companyId}`);
+            }
+        }
+    }
+    return company;
+}
+
+export class CompanyUpdateVerificationError extends Error {}
