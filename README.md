@@ -15,6 +15,18 @@ from WebStorm after replacing the example company IDs.
   result for each company; HTTP 207 indicates that one or more updates failed.
   Successful updates are retained if another company fails.
 
+All outgoing Ad Orbit requests share a queue within the server process, with at
+least one second between requests (including verification GETs). Set
+`ADORBIT_REQUEST_INTERVAL_MS` to a positive integer in `.env` to change this
+spacing. A 429 pauses the queue and retries the failed request up to five times,
+respecting `Retry-After` seconds or dates and using exponential backoff from
+2 to 60 seconds. Every company receives these retries independently; exhausted
+failures are included in `failedIds` in the bulk response for resubmission.
+Non-429 errors are reported without automatic retries. Large batches take at
+least two seconds per company; increase the HTTP client timeout as needed.
+Multiple server processes each have their own queue, so account for their
+combined traffic when choosing the interval.
+
 Only supplied properties are sent to Ad Orbit. Boolean properties accept
 `true`, `false`, `1`, or `0`. `typeId` and `marketId` accept integers; all other
 listed company properties accept strings. An optional single-company body `id`

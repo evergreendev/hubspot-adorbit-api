@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
+    "test": "tsx --test tests/*.test.ts",
     "build": "tsc",
     "dev": "tsx watch --env-file=.env ./bin/www.ts",
     "dry-run": "tsx --env-file=.env ./bin/orderSync.ts --dry-run",

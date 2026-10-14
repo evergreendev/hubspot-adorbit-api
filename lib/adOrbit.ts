@@ -1,4 +1,5 @@
 import { createHmac } from "node:crypto";
+import { adOrbitRequest } from "./adOrbitRequest";
 import type { AdOrbitOrder } from "./types.js";
 
 export function createAdOrbitAuthorization(
@@ -22,7 +23,7 @@ async function adOrbitGet<T>(options: {
     headers?: Record<string, string>;
 }): Promise<T> {
     const method = "GET";
-    const response = await fetch(options.url, {
+    const response = await adOrbitRequest(options.url, {
         headers: {
             Accept: "application/json",
             Method: method,
@@ -117,7 +118,7 @@ export async function updateCompany(options: {
     for (const [key, value] of Object.entries(options.properties)) {
         fields.set(key, typeof value === "boolean" ? (value ? "1" : "0") : String(value));
     }
-    const response = await fetch(url, {
+    const response = await adOrbitRequest(url, {
         method,
         headers: {
             Accept: "application/json",

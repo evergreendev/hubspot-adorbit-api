@@ -68,7 +68,8 @@ router.put('/bulk', async (request, response, next) => {
         results.push({ id: companyId, success: false, error: error instanceof Error ? error.message : String(error) });
       }
     }
-    response.status(results.some(result => !result.success) ? 207 : 200).json({ count: results.length, results });
+    const failedIds = results.filter(result => !result.success).map(result => result.id);
+    response.status(failedIds.length ? 207 : 200).json({ count: results.length, results, failedIds });
   } catch (error) {
     next(error);
   }
